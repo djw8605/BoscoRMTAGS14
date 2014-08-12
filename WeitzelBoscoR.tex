@@ -359,6 +359,7 @@
 % use a multiple column layout for up to three different
 % affiliations
 \author{\IEEEauthorblockN{Derek Weitzel\IEEEauthorrefmark{1}, Jaime Frey\IEEEauthorrefmark{2}, Marco Mambelli\IEEEauthorrefmark{3}, Dan Fraser\IEEEauthorrefmark{4}, Miha Ahronovitz\IEEEauthorrefmark{5}, David Swanson\IEEEauthorrefmark{1}}
+\and
 \IEEEauthorblockA{\IEEEauthorrefmark{1}Computer Science \& Engineering\\
 University of Nebraska -- Lincoln\\
 Email: [dweitzel, dswanson]@cse.unl.edu}
@@ -445,7 +446,7 @@ Bosco is middleware that uses common protocols to manage job submissions to a va
 \section{Introduction}
 Usage of R by data miners has grown much faster than any other programming language \cite{rexer2013, KDnuggets2013}.  Data mining requires computational resources, sometimes more computational resources than can be provided by their desktop.
 
-Typically, researchers have computational resources available to them, either locally provided by their institution, or through 
+Typically, researchers have computational resources available to them, either locally provided by their institution, or through national cyberinfrastructure such as the OSG \cite{} or XSEDE \cite{}.
 
 % Overview of parallel libraries
 Many parallel libraries are available for R.  Most focus on managing the R processing on a single server, such as 
@@ -453,7 +454,7 @@ Many parallel libraries are available for R.  Most focus on managing the R proce
 There are several parallel R libraries that can take advantage of 
 
 
-In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.
+In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.  Finally, we conclude 
 
 \section{Background}
 Bosco is primarily made up of two components, Bosco and GridR.  Bosco provides an interface to the remote batch system, and manages faults in the job submission process.  GridR provides a user interface to create initiate remote processing.
