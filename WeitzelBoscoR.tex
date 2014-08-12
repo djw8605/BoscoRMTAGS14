@@ -443,7 +443,14 @@ Bosco is middleware that uses common protocols to manage job submissions to a va
 
 
 \section{Introduction}
-Usage of R by data miners has grown much faster than any other programming language \cite{rexer2013, KDnuggets2013}.  
+Usage of R by data miners has grown much faster than any other programming language \cite{rexer2013, KDnuggets2013}.  Data mining requires computational resources, sometimes more computational resources than can be provided by their desktop.
+
+Typically, researchers have computational resources available to them, either locally provided by their institution, or through 
+
+% Overview of parallel libraries
+Many parallel libraries are available for R.  Most focus on managing the R processing on a single server, such as 
+
+There are several parallel R libraries that can take advantage of 
 
 
 In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.
