@@ -492,6 +492,7 @@ Many parallel libraries are available for R.  Most focus on managing the R proce
 \label{lst:lapply}
 \end{figure}
 
+The \texttt{lapply} function is ideally suited for high throughput computing.  There is no communication between executions of the function on the array.  The input vector can be easily partitioned in order to split the execution across multiple resources.  It is because of these reasons that most parallel applications use the \texttt{lapply} model to provide parallelism.  Examples are the parallel package which defines the functions \texttt{mcapply} (multi-core apply) and \texttt{parapply} (parallel apply).  GridR also follows this lapply model for parallelization.  
 
 
 GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some that are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
