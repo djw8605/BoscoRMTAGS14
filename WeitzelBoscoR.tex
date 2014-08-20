@@ -127,7 +127,7 @@
 % *** GRAPHICS RELATED PACKAGES ***
 %
 \ifCLASSINFOpdf
-  % \usepackage[pdftex]{graphicx}
+   \usepackage[pdftex]{graphicx}
   % declare the path(s) where your graphic files are
   % \graphicspath{{../pdf/}{../jpeg/}}
   % and their extensions so you won't have to specify these with
@@ -459,17 +459,25 @@ Bosco \cite{weitzel2014accessing}
 
 
 
-There are several parallel R libraries that can take advantage of 
-
-
 In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.  Finally, we conclude 
 
 \section{Background}
 BoscoR is primarily made up of two components, Bosco and GridR.  Bosco provides an interface to the remote batch system, and manages faults in the job submission process.  GridR provides a user interface to create and initiate remote processing.
 
 \subsection{Bosco}
+%TODO
+A number of different methods have been used to distribute jobs across multiple resources.  Inside a cluster, schedulers such as HTCondor  \cite{litzkow1988condor} and PBS \cite{TODO} have been used.  Neither of these schedulers have been used to submit jobs from their desktops, a key requirement in improving the user experience of R user.  Remote submission is heavily used in Grid, and uses technology such as Globus \cite{foster2001globus} and UNICORE \cite{romberg2002unicore}.  Both of these remote submission methods require installation of   
 
-  
+Bosco \cite{weitzel2014accessing} is used to effortlessly create a remote submission endpoint on a cluster, without the administrator installing any software.  The architecture of Bosco is shown in Figure \ref{fig:boscoarch}.  Bosco is a remote submission framework based upon HTCondor.  It uses the SSH \cite{ylonen2006secure} protocol to submit and monitor remotely submitted jobs.  Additionally, it performs file transfers of the same SSH connection.
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width=.8\textwidth]{images/ArchitectureGraph1.pdf}
+\caption{Architecture of Bosco}
+\label{fig:boscoarch}
+\end{figure*}
+
+Bosco is designed to be run without administrator intervention.  It automatically installs the Bosco files   SSH was chosen as the protocol since it is used nearly universally for cluster access.  Jobs are submitted to Bosco, which then submits them over ssh to the remote cluster.  Input files are transferred over the SSH connection as well.  Bosco then monitors and reports the status of the job from idle on the remote cluster, running, and finally completed.  Once the job is completed, Bosco will transfer output files back to the submit host.
 
 \subsection{GridR}
 % Overview of parallel libraries
@@ -492,10 +500,11 @@ Many parallel libraries are available for R.  Most focus on managing the R proce
 \label{lst:lapply}
 \end{figure}
 
-The \texttt{lapply} function is ideally suited for high throughput computing.  There is no communication between executions of the function on the array.  The input vector can be easily partitioned in order to split the execution across multiple resources.  It is because of these reasons that most parallel applications use the \texttt{lapply} model to provide parallelism.  Examples are the parallel package which defines the functions \texttt{mcapply} (multi-core apply) and \texttt{parapply} (parallel apply).  GridR also follows this lapply model for parallelization.  
+The \texttt{lapply} function is ideally suited for high throughput computing.  There is no communication between executions of the function on the array.  The input vector can be easily partitioned in order to split the execution across multiple resources.  It is because of these reasons that most parallel applications use the \texttt{lapply} model to provide parallelism.  Examples are the parallel package which defines the functions \texttt{mcapply} (multi-core apply) and \texttt{parapply} (parallel apply). In the \texttt{parallel} package, calling \texttt{mcapply} causes R to fork a process that will execute the function \textbf{FUN} on each element in the input vector.  A similar process happens when calling \texttt{parapply}. 
 
+Another built-in parallelization package is Simple Network of Workstations (snow) \cite{rlangsnow}.  Snow allows for multiple computers to organize and execute parallel processing of data.  The computers communicate over regular network sockets or using MPI.  This allows for multiple computers inside the same cluster to process the same data, but is difficult to gather more than a couple computers to process the data.  Snow also has built-in \texttt{lapply} like functionality.
 
-GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some that are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
+GridR also follows this \texttt{lapply} model for parallelization.  GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
 
 \begin{itemize}
 \item R is installed on all of the worker nodes.
@@ -503,7 +512,7 @@ GridR was originally written by a group for use with data analysis in ACGT cline
 \item The GridR package is installed on all of the remote resources.
 \end{itemize}
 
-All of these assumptions cannot be met on modern grid resources.  Applications must 
+All of these assumptions cannot be met on modern grid resources.  Applications cannot assume that a non-standard processing tool, such as R, is installed on every computer.  Further, that it is installed at exactly the same location on all clusters in the grid.  Modifications where made to GridR to erase these assumptions, as well as adapting it to submit to Bosco.
 
 \section{Implementation}
 \label{sec:implementation}
