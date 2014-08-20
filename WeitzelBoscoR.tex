@@ -264,7 +264,9 @@
 
 
 
-%\usepackage[caption=false]{caption}
+\usepackage{caption}
+\usepackage{framed}
+%\usepackage{mdframed}
 %\usepackage[font=footnotesize]{subfig}
 % subfig.sty, also written by Steven Douglas Cochran, is the modern
 % replacement for subfigure.sty. However, subfig.sty requires and
@@ -334,7 +336,7 @@
 % \url{my_url_here}.
 
 
-
+\usepackage{listings}
 
 
 % *** Do not adjust lengths that control margins, column widths, etc. ***
@@ -418,6 +420,9 @@ Email: miha.ahronovitz@ahrono.com}
 In this paper, we describe a framework to execute R functions on remote resources from the desktop using Bosco.  The R language is attractive to researchers because of its high level programming constructs which lower the barrier of entry for use.  As the use of the R programming language in HPC and High Throughput Computing (HTC) has grown, so too has the need for parallel libraries in order to utilize computing resources.  
 
 Bosco is middleware that uses common protocols to manage job submissions to a variety of remote computational platforms and resources.  The researcher is able to control and monitor remote submission from their interactive R IDE, such as RStudio.  Bosco is capable of managing many concurrent tasks submitted to remote resources while providing feedback to the interactive R environment.  We will also show how this framework can be used to access national infrastructure such as the Open Science Grid.
+
+Through interviews with R users, and their feedback after using BoscoR, we learned how R users work and designed BoscoR to fit their needs.  We incorporated their feedback to improve BoscoR by adding much needed features, such as remote package management. A key design goal was to have a flat learning curve in using BoscoR for any R user.
+
 \end{abstract}
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
@@ -444,12 +449,15 @@ Bosco is middleware that uses common protocols to manage job submissions to a va
 
 
 \section{Introduction}
-Usage of R by data miners has grown much faster than any other programming language \cite{rexer2013, KDnuggets2013}.  Data mining requires computational resources, sometimes more computational resources than can be provided by their desktop.
+Usage of the R language \cite{team2012r} by data miners has grown much faster than any other programming language \cite{rexer2013, KDnuggets2013}.  Data mining requires computational resources, sometimes more computational resources than can be provided by their desktop.  In the Rexer study \cite{rexer2013}, ``Available computing power'' was the second most common problem for big data analysis.  In addition, the respondants stated that distributed or parallel processing was the least common solution to their big data needs.  This could be attributed to the difficulty of processing data with the R language on distributed resources, a challenge we set out to solve with BoscoR.
 
-Typically, researchers have computational resources available to them, either locally provided by their institution, or through national cyberinfrastructure such as the OSG \cite{} or XSEDE \cite{}.
+Part of the reason that distributed computing is not seen as a popular solution to big data processing is that scientists are more familiar processing on their desktop than in a cluster environment.  R is typically used by people that have not used distributed computing before, and do most of their analysis on their local systems with IDE's such as RStudio \cite{racine2012rstudio}.  Users are unaccustomed to the traditional distributed computing model of batch processing in which there is no interactive access to the running processes.
 
-% Overview of parallel libraries
-Many parallel libraries are available for R.  Most focus on managing the R processing on a single server, such as 
+Most researchers have computational resources available to them, either locally provided by their institution or university, or through national cyberinfrastructure such as the OSG \cite{pordes2007open} or XSEDE \cite{xsede}.
+
+Bosco \cite{weitzel2014accessing}
+
+
 
 There are several parallel R libraries that can take advantage of 
 
@@ -457,16 +465,44 @@ There are several parallel R libraries that can take advantage of
 In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.  Finally, we conclude 
 
 \section{Background}
-Bosco is primarily made up of two components, Bosco and GridR.  Bosco provides an interface to the remote batch system, and manages faults in the job submission process.  GridR provides a user interface to create initiate remote processing.
+BoscoR is primarily made up of two components, Bosco and GridR.  Bosco provides an interface to the remote batch system, and manages faults in the job submission process.  GridR provides a user interface to create and initiate remote processing.
 
 \subsection{Bosco}
 
   
 
 \subsection{GridR}
-GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.
+% Overview of parallel libraries
+Many parallel libraries are available for R.  Most focus on managing the R processing on a single server, such as the \texttt{parallel} package \cite{rparallelpackage}.  The \texttt{parallel} package comes bundled with R, and provides for single machine parallelism.  Parallelism is done by using variations of the R function \texttt{lapply}.  A simplified definition of \texttt{lapply} is shown in Figure \ref{lst:lapply}.  \texttt{lapply} is the basis for nearly all parallel libraries in R.  
+
+\begin{figure}[ht!]
+\begin{framed}
+\texttt{lapply}(\textbf{X}, \textbf{FUN}, \textbf{\ldots}):
+\begin{description}
+\item[\textbf{X}] a vector (atomic or list) or an expression object.
+\item[\textbf{FUN}] the function to be applied to each element of X
+\item[\textbf{\ldots}] optional arguments to FUN.
+\item[Returns] list of the same length as X, each element of which is the result of applying FUN to the corresponding element of X.
+\end{description}
+\end{framed}
+
+\centering
+\captionsetup{justification=centering}
+\caption{Funciton definition of \texttt{lapply}}
+\label{lst:lapply}
+\end{figure}
 
 
+
+GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some that are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
+
+\begin{itemize}
+\item R is installed on all of the worker nodes.
+\item The R binaries are in the same location on all of the remote resources.
+\item The GridR package is installed on all of the remote resources.
+\end{itemize}
+
+All of these assumptions cannot be met on modern grid resources.  Applications must 
 
 \section{Implementation}
 \label{sec:implementation}
@@ -590,9 +626,7 @@ The conclusion goes here.
 
 % use section* for acknowledgement
 \section*{Acknowledgment}
-
-
-The authors would like to thank...
+This research was done using resources provided by the Open Science Grid, which is supported by the National Science Foundation and the U.S. Department of Energy's Office of Science.
 
 
 
