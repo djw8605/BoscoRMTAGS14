@@ -455,8 +455,6 @@ Part of the reason that distributed computing is not seen as a popular solution 
 
 Most researchers have computational resources available to them, either locally provided by their institution or university, or through national cyberinfrastructure such as the OSG \cite{pordes2007open} or XSEDE \cite{xsede}.
 
-Bosco \cite{weitzel2014accessing}
-
 
 
 In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco and GridR.  In section \ref{sec:implementation}, we describe how we combined these to components to create a fault tolerant framework that provides a positive user experience.  Next, in section \ref{sec:results}, we discuss the scalability of our combined solution.  Finally, we conclude 
@@ -466,7 +464,7 @@ BoscoR is primarily made up of two components, Bosco and GridR.  Bosco provides 
 
 \subsection{Bosco}
 %TODO
-A number of different methods have been used to distribute jobs across multiple resources.  Inside a cluster, schedulers such as HTCondor  \cite{litzkow1988condor} and PBS \cite{TODO} have been used.  Neither of these schedulers have been used to submit jobs from their desktops, a key requirement in improving the user experience of R user.  Remote submission is heavily used in Grid, and uses technology such as Globus \cite{foster2001globus} and UNICORE \cite{romberg2002unicore}.  Both of these remote submission methods require installation of   
+A number of different methods have been used to distribute jobs across multiple resources.  Inside a cluster, schedulers such as HTCondor  \cite{litzkow1988condor} and PBS \cite{henderson1995job} have been used.  Neither of these schedulers have been used to submit jobs from their desktops, a key requirement in improving the user experience of R user.  Remote submission is heavily used in Grid, and uses technology such as Globus \cite{foster2001globus} and UNICORE \cite{romberg2002unicore}.  Both of these remote submission methods require installation of software on a server that is inside the cluster to create an endpoint.  This installation typically requires a administrator.
 
 Bosco \cite{weitzel2014accessing} is used to effortlessly create a remote submission endpoint on a cluster, without the administrator installing any software.  The architecture of Bosco is shown in Figure \ref{fig:boscoarch}.  Bosco is a remote submission framework based upon HTCondor.  It uses the SSH \cite{ylonen2006secure} protocol to submit and monitor remotely submitted jobs.  Additionally, it performs file transfers of the same SSH connection.
 
@@ -477,7 +475,7 @@ Bosco \cite{weitzel2014accessing} is used to effortlessly create a remote submis
 \label{fig:boscoarch}
 \end{figure*}
 
-Bosco is designed to be run without administrator intervention.  It automatically installs the Bosco files   SSH was chosen as the protocol since it is used nearly universally for cluster access.  Jobs are submitted to Bosco, which then submits them over ssh to the remote cluster.  Input files are transferred over the SSH connection as well.  Bosco then monitors and reports the status of the job from idle on the remote cluster, running, and finally completed.  Once the job is completed, Bosco will transfer output files back to the submit host.
+Bosco is designed to be run without administrator intervention.  It automatically installs the Bosco client on the remote cluster.  SSH was chosen as the protocol since it is used nearly universally for cluster access.  Jobs are submitted to Bosco, which then submits them over ssh to the remote cluster.  Input files are transferred over the SSH connection as well.  Bosco then monitors and reports the status of the job from idle on the remote cluster, running, and finally completed.  Once the job is completed, Bosco will transfer output files back to the submit host.
 
 \subsection{GridR}
 % Overview of parallel libraries
@@ -504,7 +502,9 @@ The \texttt{lapply} function is ideally suited for high throughput computing.  T
 
 Another built-in parallelization package is Simple Network of Workstations (snow) \cite{rlangsnow}.  Snow allows for multiple computers to organize and execute parallel processing of data.  The computers communicate over regular network sockets or using MPI.  This allows for multiple computers inside the same cluster to process the same data, but is difficult to gather more than a couple computers to process the data.  Snow also has built-in \texttt{lapply} like functionality.
 
-GridR also follows this \texttt{lapply} model for parallelization.  GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
+GridR also follows this \texttt{lapply} model for parallelization.  It uses a function called \texttt{grid.apply}, which will apply a function to every element of a input vector, similar to \texttt{lapply}.  Instead of forking a process like \texttt{mcapply}, it compiles the input data and function, and submits the execution to a grid endpoint.
+
+GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
 
 \begin{itemize}
 \item R is installed on all of the worker nodes.
@@ -524,9 +524,29 @@ All of these assumptions cannot be met on modern grid resources.  Applications c
 \item Downloads appropriate version of R from a central repository.  Caches the R installation if available (both at the file system level, and the R level).
 \end{itemize}
 
-Bosco is designed to run on resources that are not controlled by the submitter user.  Further, it is designed to run on resources without any assumptions as to what is installed.  In order to operate under these assumptions, Bosco must bootstrap itself by brining in all the libraries and dependencies in order to operate.  Therefore, BoscoR must run under the same assumptions.  
+Bosco is designed to run on resources that are not controlled by the submitter user.  Further, it is designed to run on resources without any assumptions as to what is installed.  In order to operate under these assumptions, Bosco must bootstrap itself by brining in all the libraries and dependencies in order to operate.  Therefore, BoscoR must run under the same assumptions.
 
+GridR was modified to submit to Bosco.  The input generation of GridR is shown in Figure \ref{fig:gridrinput}.  When a user or script calls \texttt{grid.apply}, GridR compiles  input function and input data into a R data file, which can be read in by another R process.  GridR handles function dependencies by using R's dependency detection and compiles any functions that may be required into the input.  
 
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.4\textwidth]{images/InputDiagram.pdf}
+\caption{GridR Input Generation}
+\label{fig:gridrinput}
+\end{figure}
+
+GridR was modified to first create a submit file which will be submitted to the local system where Bosco is installed.  The submit file explicitly lists the input files and the expected output file.  The input files, as shown in Figure \ref{fig:gridrinput}, is the compiled function and input data.  Further, a separate script, the R bootstrap script, is sent to the worker node as well.  The bootstrap is further discussed in \ref{sec:bootstrap}.
+
+The submit and polling script is executed by GridR after forking a new R process.  This is a light weight process that submits the Bosco submission script and watches for any errors.  If the input function is executed many times by many separate jobs, the polling script will aggregate the results as they are returned to the submit node into a vector.  
+
+\subsection{Bootstrap}
+\label{sec:bootstrap}
+
+Since Bosco cannot make an assumptions as to what is installed on the remote cluster, neither can BoscoR.  Therefore, GridR was modified to detect, and if necessary install, R on the remote system.  This was performed by a bootstrap process.
+
+In the GridR generated submit file, the listed executable to run on the remote system is not R, but the bootstrap executable.  The bootstrap executable detects if R is installed on the remote system.  If it is installed, it simply executes the user defined function against the input data.  If R is not installed, the bootstrap downloads the appropriate version of R for the remote operating system.  The supported platforms are identical to Bosco's, CentOS 5/6 and Debian 6/7.  Several bootstrap jobs could start at once on a remote cluster, so a simple transactional file locking mechanism was devised so only a single bootstrap executable on a cluster will download and install for the entire cluster, if a shared file system is available.  
+
+\subsection{Running on the Open Science Grid}
 
 \begin{itemize}
 \item R installation
