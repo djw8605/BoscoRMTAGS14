@@ -517,12 +517,12 @@ All of these assumptions cannot be met on modern grid resources.  Applications c
 \section{Implementation}
 \label{sec:implementation}
 
-\begin{itemize}
-\item Combining Bosco with GridR improves usability dramatically for R users.
-\item Modify GridR in order to submit to local bosco
-\item Improve scalability and fault tolerance of GridR
-\item Downloads appropriate version of R from a central repository.  Caches the R installation if available (both at the file system level, and the R level).
-\end{itemize}
+% \begin{itemize}
+% \item Combining Bosco with GridR improves usability dramatically for R users.
+% \item Modify GridR in order to submit to local bosco
+% \item Improve scalability and fault tolerance of GridR
+% \item Downloads appropriate version of R from a central repository.  Caches the R installation if available (both at the file system level, and the R level).
+% \end{itemize}
 
 Bosco is designed to run on resources that are not controlled by the submitter user.  Further, it is designed to run on resources without any assumptions as to what is installed.  In order to operate under these assumptions, Bosco must bootstrap itself by brining in all the libraries and dependencies in order to operate.  Therefore, BoscoR must run under the same assumptions.
 
@@ -535,7 +535,7 @@ GridR was modified to submit to Bosco.  The input generation of GridR is shown i
 \label{fig:gridrinput}
 \end{figure}
 
-GridR was modified to first create a submit file which will be submitted to the local system where Bosco is installed.  The submit file explicitly lists the input files and the expected output file.  The input files, as shown in Figure \ref{fig:gridrinput}, is the compiled function and input data.  Further, a separate script, the R bootstrap script, is sent to the worker node as well.  The bootstrap is further discussed in \ref{sec:bootstrap}.
+GridR was modified to first create a submit file which will be submitted to the local system where Bosco is installed.  The submit file explicitly lists the input files and the expected output file, all of which will be transferred by Bosco.  The input files, as shown in Figure \ref{fig:gridrinput}, are the compiled function and input data and a bootstrap executable. The bootstrap is further discussed in \ref{sec:bootstrap}.
 
 The submit and polling script is executed by GridR after forking a new R process.  This is a light weight process that submits the Bosco submission script and watches for any errors.  If the input function is executed many times by many separate jobs, the polling script will aggregate the results as they are returned to the submit node into a vector.  
 
@@ -548,6 +548,8 @@ In the GridR generated submit file, the listed executable to run on the remote s
 
 \subsection{Running on the Open Science Grid}
 
+
+
 \begin{itemize}
 \item R installation
 \item User Scripts
@@ -559,7 +561,11 @@ In the GridR generated submit file, the listed executable to run on the remote s
 
 \section{Results}
 
+The results section is broken into two categories, results from user feedback and results 
 
+\subsection{Results from feedback}
+
+A primary goal with BoscoR was to improve the user experience of 
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
