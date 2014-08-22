@@ -477,6 +477,12 @@ Bosco \cite{weitzel2014accessing} is used to effortlessly create a remote submis
 
 Bosco is designed to be run without administrator intervention.  It automatically installs the Bosco client on the remote cluster.  SSH was chosen as the protocol since it is used nearly universally for cluster access.  Jobs are submitted to Bosco, which then submits them over ssh to the remote cluster.  Input files are transferred over the SSH connection as well.  Bosco then monitors and reports the status of the job from idle on the remote cluster, running, and finally completed.  Once the job is completed, Bosco will transfer output files back to the submit host.
 
+Bosco has two modes of job submission:
+\begin{enumerate}
+\item \textbf{Direct} -- A single job on the Bosco submit host corresponds to a single job on the remote cluster.  Each job is submitted individually to the remote cluster's scheduling system.  This method is the simplest to run, and imposes no special requirements on the submit machine.
+\item \textbf{Glidein} -- Bosco submits many pilot jobs to the remote cluster using the Direct method.  But, each of the pilots can service multiple user submitted jobs from the Bosco submit host.  This method minimizes the overhead on the remote cluster since Bosco is not submitting many jobs through the cluster scheduler.  The Glidein method requires that the Bosco submit host can be contacted from the remote cluster worker nodes.
+\end{enumerate}
+
 \subsection{GridR}
 % Overview of parallel libraries
 Many parallel libraries are available for R.  Most focus on managing the R processing on a single server, such as the \texttt{parallel} package \cite{rparallelpackage}.  The \texttt{parallel} package comes bundled with R, and provides for single machine parallelism.  Parallelism is done by using variations of the R function \texttt{lapply}.  A simplified definition of \texttt{lapply} is shown in Figure \ref{lst:lapply}.  \texttt{lapply} is the basis for nearly all parallel libraries in R.  
@@ -565,7 +571,23 @@ The results section is broken into two categories, results from user feedback an
 
 \subsection{Results from feedback}
 
-A primary goal with BoscoR was to improve the user experience of 
+A primary goal with BoscoR was to improve the user experience of using R on distributed resources.  The improvements to GridR and the integration with Bosco made working with campus or institutional resources much better. After acquiring a few users, we received feedback on how BoscoR could be improved.  In this section we will describe the improvements.
+
+\subsubsection{User Provided Packages}
+
+Many users require additional packages to be installed before their function can execute.  It was assumed that most of these packages would be in the major R package repositories, such as the Comprehensive R Archive Network (CRAN) \cite{cran}.  If the the package is in CRAN, the user provided function can install the package.  After receiving user feedback, it was found that not all desired packages are available in CRAN.  A modification to both the submit file and the bootstrap executable was designed.
+
+In order to install a user provided package, it first needs to be transferred with to the remote cluster.  This is done by including the package in the list of input files to be transferred by Bosco for each job.  Additionally, the packages should be installed before the user function is executed on the remote resources.  This required modification to the bootstrap executable in order install the packages after installing R, but before executing the user's function on the input data.
+
+\subsubsection{Quick Jobs}
+Since the GridR interface only provides for a single function to execute against the input data, it was assumed that the function would be a time consuming data processing function that may call many other functions.  Therefore, the delay Bosco introduces would not significantly effect the performance of the executions.  After receiving feedback from users, it was determined that the more common use case is to use smaller functions that could execute in seconds or minutes.  In order to accommodate shorter jobs, a modification to the GridR generated submit script was required.
+
+
+
+
+\subsection{Performance Results}
+
+
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
