@@ -588,9 +588,18 @@ In this case, we modified the submit file so that Bosco would use the Glidein me
 
 \subsection{Performance Results}
 
+\subsubsection{Experimental setup}  
+
+In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying length's of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users where instead submitting short functions to be executed quickly.  
+
+To verify our solution to quick jobs, we test different job lengths using both the Direct and Glidein submission method.  Further, we test the capability of the bootstrap script quickly install R if necessary.
+
 \subsubsection{Direct submission}
 
+
 \subsubsection{Bootstrap}
+
+
 
 \subsubsection{Glidein}
 
