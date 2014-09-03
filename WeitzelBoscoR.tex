@@ -551,7 +551,9 @@ The submit and polling script is executed by GridR after forking a new R process
 
 Since Bosco cannot make an assumptions as to what is installed on the remote cluster, neither can BoscoR.  Therefore, GridR was modified to detect, and if necessary install, R on the remote system.  This was performed by a bootstrap process.
 
-In the GridR generated submit file, the listed executable to run on the remote system is not R, but the bootstrap executable.  The bootstrap executable detects if R is installed on the remote system.  If it is installed, it simply executes the user defined function against the input data.  If R is not installed, the bootstrap downloads the appropriate version of R for the remote operating system.  The supported platforms are identical to Bosco's, CentOS 5/6 and Debian 6/7.  Several bootstrap jobs could start at once on a remote cluster, so a simple transactional file locking mechanism was devised so only a single bootstrap executable on a cluster will download and install for the entire cluster, if a shared file system is available.  
+In the GridR generated submit file, the listed executable to run on the remote system is not R, but the bootstrap executable.  The bootstrap executable detects if R is installed on the remote system.  If it is installed, it simply executes the user defined function against the input data.  If R is not installed, the bootstrap downloads the appropriate version of R for the remote operating system.  The supported platforms are identical to Bosco's, CentOS 5/6 and Debian 6/7.  R is downloaded from a central server operated by the OSG's Grid Operations Center \cite{osgoperations}.  
+
+Several bootstrap jobs could start at once on a remote cluster, so a simple transactional file locking mechanism was devised so only a single bootstrap executable on a cluster will download and install for the entire cluster, if a shared file system is available.  If a shared filesystem is not available for installation, R is installed in a temporary directory that is removed upon job completion.
 
 \subsection{Running on the Open Science Grid}
 
@@ -611,27 +613,32 @@ Direct submission is defined as submission using Bosco's direct submission metho
 \label{fig:directsubmit}
 \end{figure}
 
-A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directsubmit}.  The submitted jobs are jobs which are submitted locally, but not yet submitted to the remote scheduler.  Remote represents the jobs which are submitted to the remote SLURM scheduler.  The submission to the remote scheduler is very rapid.  Bosco is able to submit 700 jobs, the limit in this implementation to submit at a single time, within a minute.  After the initial submission, SLURM is able to rapidly begin executing many, but not all of the submitted jobs.  Bosco maintains constant pressure, in the form of idle jobs, in case resources become available on the cluster.  In this workflow, all 1000 30 minute jobs finish in just over 100 hours.
+A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directsubmit}.  The submitted jobs are jobs which are submitted locally, but not yet submitted to the remote scheduler.  Remote represents the jobs which are submitted to the remote SLURM scheduler.  The submission to the remote scheduler is very rapid.  Bosco is able to submit 700 jobs, the limit in this implementation to submit at a single time, within a minute.  After the initial submission, SLURM is able to rapidly begin executing many, but not all of the submitted jobs.  Bosco maintains constant pressure, in the form of idle jobs, in case resources become available on the cluster.  You will notice the straight line in the number of submitted jobs, which dips after 30 minutes.  At 30 minutes, the first jobs begin to complete, and Bosco begins to submit more jobs to the cluster, attempting to always keep the maximum of 700 jobs either idle or running on the remote cluster.  In this workflow, all 1000 30 minute jobs finish in just over 100 hours.
 
 \subsubsection{Glidein}
 Glidein submissions use a pilot that is submitted directly to the SLURM scheduler.  Once the pilot starts, it calls back to the submission node to request work.  This method allows multiple jobs to run within the same SLURM job, independent of the cluster's scheduler.  
 
+
+
+A timeline of the Glidein Bosco submission are shown in Figure \ref{fig:glideinsubmit}.  As you can see, there is no remote in this graph.  The jobs are not directly submitted to the remote cluster.  Rather, the pilots are directly submitted to the remote SLURM scheduler.  You can see a steady stream of jobs starting.
+
+Comparing the Direct submission to the glidein submission.
+
 \begin{figure}[ht!]
 \centering
-\includegraphics[width=0.5\textwidth]{images/Glidein1800.pdf}
+\includegraphics[width=0.5\textwidth]{images/ComparisonPlot.pdf}
 
-\caption{Glidein submission}
+\caption{Comparison of submission methods}
 \label{fig:glideinsubmit}
 \end{figure}
 
-A timeline of the Glidein Bosco submission are shown in Figure \ref{fig:glideinsubmit}.
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/NumberRunning.pdf}
 
-\subsubsection{Bootstrap}
-
-
-
-
-
+\caption{Number of simultaneously running jobs}
+\label{fig:glideinsubmit}
+\end{figure}
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
