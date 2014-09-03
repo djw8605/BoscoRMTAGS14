@@ -592,16 +592,45 @@ In this case, we modified the submit file so that Bosco would use the Glidein me
 
 In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying length's of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users where instead submitting short functions to be executed quickly.  
 
-To verify our solution to quick jobs, we test different job lengths using both the Direct and Glidein submission method.  Further, we test the capability of the bootstrap script quickly install R if necessary.
+To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.  Further, we test the capability of the bootstrap script quickly install R, if necessary.
+
+To execute the test jobs, we used the production cluster Tusker as the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at >90\% utilization, with over dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  The fair sharing scheduler is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
+
+The Tusker cluster was chosen since access was easy for the authors of this paper.  Further, it is utilized enough that the jobs would be competing against other user's jobs for available resources, and therefore not all submitted GridR functions would be able to execute simultaneously.  We believe this best represents most clusters, which are typically highly utilized by many researchers.  It is plausible that a cluster could be so utilized that no user jobs could be executed, while the other extreme could also be true, that enough resources are available for all submitted jobs to be executed immediately.  We found that Tusker utilization is somewhere between these two extremes.  It is capable of running many, but not all, jobs submitted to it immediately.  And the rest will execute as resources become available.
+
+For our testing, we submitted 1000 of different length jobs. 1000 jobs was chosen arbitrary, but from experience when helping users of GridR.  They typically submit many jobs, sometimes reaching into the thousands.  Our goal was to submit more jobs than could be run instantly by the remote cluster, but no so many that gathering repeated testing data would be impossibly time consuming.
 
 \subsubsection{Direct submission}
+Direct submission is defined as submission using Bosco's direct submission method.  In GridR, the library is initialized with the argument \texttt{service="bosco.direct"}.  When this setting is used, GridR generates submission scripts that use Bosco's default routing mechanism to submit to a single cluster.  The GridR functions are submitted as jobs directly to Tusker's SLURM scheduler.
 
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/30minplot.pdf}
+
+\caption{Direct submission}
+\label{fig:directsubmit}
+\end{figure}
+
+A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directsubmit}.  The submitted jobs are jobs which are submitted locally, but not yet submitted to the remote scheduler.  Remote represents the jobs which are submitted to the remote SLURM scheduler.  The submission to the remote scheduler is very rapid.  Bosco is able to submit 700 jobs, the limit in this implementation to submit at a single time, within a minute.  After the initial submission, SLURM is able to rapidly begin executing many, but not all of the submitted jobs.  Bosco maintains constant pressure, in the form of idle jobs, in case resources become available on the cluster.  In this workflow, all 1000 30 minute jobs finish in just over 100 hours.
+
+\subsubsection{Glidein}
+Glidein submissions use a pilot that is submitted directly to the SLURM scheduler.  Once the pilot starts, it calls back to the submission node to request work.  This method allows multiple jobs to run within the same SLURM job, independent of the cluster's scheduler.  
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=0.5\textwidth]{images/Glidein1800.pdf}
+
+\caption{Glidein submission}
+\label{fig:glideinsubmit}
+\end{figure}
+
+A timeline of the Glidein Bosco submission are shown in Figure \ref{fig:glideinsubmit}.
 
 \subsubsection{Bootstrap}
 
 
 
-\subsubsection{Glidein}
+
 
 
 % An example of a floating figure using the graphicx package.
@@ -700,6 +729,8 @@ The conclusion goes here.
 % use section* for acknowledgement
 \section*{Acknowledgment}
 This research was done using resources provided by the Open Science Grid, which is supported by the National Science Foundation and the U.S. Department of Energy's Office of Science.
+
+This work was completed utilizing the Holland Computing Center of the University of Nebraska.
 
 
 
