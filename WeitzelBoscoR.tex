@@ -557,7 +557,9 @@ Several bootstrap jobs could start at once on a remote cluster, so a simple tran
 
 \subsection{Running on the Open Science Grid}
 
+Submitting to the Open Science Grid (OSG) is done by direct submission.  The OSG hosts access nodes which can be used to submit to resources on the grid.  BoscoR supports these access nodes by using the direct submission method.
 
+Most OSG sites do not have shared home directories for users.  Therefore, the bootstrap script must install R on ever node in a temporary directory.  In order to optimize the R installation, the bootstrap script utilizes the HTTP forward proxy infrastructure available on the OSG to minimize requests to the central hosting server.
 
 
 \section{Results}
@@ -588,7 +590,7 @@ In order to test BoscoR, we have to simulate a R workload.  We simulate a worklo
 
 To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.  Further, we test the capability of the bootstrap script quickly install R, if necessary.
 
-To execute the test jobs, we used the production cluster Tusker as the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at >90\% utilization, with over dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  The fair sharing scheduler is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
+To execute the test jobs, we used the production cluster Tusker as the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at $>$90\% utilization, with over dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  The fair sharing scheduler is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
 
 The Tusker cluster was chosen since access was easy for the authors of this paper.  Further, it is utilized enough that the jobs would be competing against other user's jobs for available resources, and therefore not all submitted GridR functions would be able to execute simultaneously.  We believe this best represents most clusters, which are typically highly utilized by many researchers.  It is plausible that a cluster could be so utilized that no user jobs could be executed, while the other extreme could also be true, that enough resources are available for all submitted jobs to be executed immediately.  We found that Tusker utilization is somewhere between these two extremes.  It is capable of running many, but not all, jobs submitted to it immediately.  And the rest will execute as resources become available.
 
@@ -723,7 +725,7 @@ For the shorter 100 second jobs the start rate begins nearly the same, but then 
 
 \section{Conclusion}
 
-BoscoR is a framework to execute R functions on distributed resources.  It is a simple method for users to distribute processing to remote resources.
+BoscoR is a framework to execute R functions on distributed resources.  It is a simple method for users to distribute processing to remote resources.  BoscoR incorporated user feedback to find a better solution short jobs.  
 
 As with any complicated system, many parameters can be varied in order to obtain different results.  For example:
 \begin{itemize}
