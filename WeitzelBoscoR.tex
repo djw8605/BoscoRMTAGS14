@@ -618,27 +618,28 @@ A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directs
 \subsubsection{Glidein}
 Glidein submissions use a pilot that is submitted directly to the SLURM scheduler.  Once the pilot starts, it calls back to the submission node to request work.  This method allows multiple jobs to run within the same SLURM job, independent of the cluster's scheduler.  
 
-
-
-A timeline of the Glidein Bosco submission are shown in Figure \ref{fig:glideinsubmit}.  As you can see, there is no remote in this graph.  The jobs are not directly submitted to the remote cluster.  Rather, the pilots are directly submitted to the remote SLURM scheduler.  You can see a steady stream of jobs starting.
-
-Comparing the Direct submission to the glidein submission.
-
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.5\textwidth]{images/ComparisonPlot.pdf}
-
 \caption{Comparison of submission methods}
-\label{fig:glideinsubmit}
+\label{fig:comparesubmit}
 \end{figure}
+
+Comparing the Direct submission to the glidein submission is shown in Figure \ref{fig:comparesubmit}  As you can see, for longer jobs, direct and glidein submission methods have approximately similar workflow runtimes.  But, for short jobs, glidein has significantly shorter workflow runtimes.  This can be attributed to the advantages of using a high throughput scheduler over a high performance scheduler.
+
+Bosco is built on top of HTCondor.  HTCondor is a very efficient high throughput scheduler that can quickly start the execution of jobs upon available resources.  Since many R workflows are designed to run a short function upon a large amount of data, HTCondor is a good fit.  By submitting HTCondor pilots to the remote scheduler, Bosco is able to utilize it's strength of running many small jobs quickly, resulting in a shorter workflow completion time for shorter jobs.
+
+To further illustrate how Bosco is able to run short jobs quickly, Figure \ref{fig:runningjobs} shows the number of running jobs for two workflows, 30 minute jobs and 100 second jobs.
 
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.5\textwidth]{images/NumberRunning.pdf}
 
 \caption{Number of simultaneously running jobs}
-\label{fig:glideinsubmit}
+\label{fig:runningjobs}
 \end{figure}
+
+
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
