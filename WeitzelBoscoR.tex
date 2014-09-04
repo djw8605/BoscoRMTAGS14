@@ -507,11 +507,11 @@ Many parallel libraries are available for R.  Most focus on managing the R proce
 
 The \texttt{lapply} function is ideally suited for high throughput computing.  There is no communication between executions of the function on the array.  The input vector can be easily partitioned in order to split the execution across multiple resources.  It is because of these reasons that most parallel applications use the \texttt{lapply} model to provide parallelism.  Examples are the parallel package which defines the functions \texttt{mcapply} (multi-core apply) and \texttt{parapply} (parallel apply). In the \texttt{parallel} package, calling \texttt{mcapply} causes R to fork a process that will execute the function \textbf{FUN} on each element in the input vector.  A similar process happens when calling \texttt{parapply}. 
 
-Another built-in parallelization package is Simple Network of Workstations (snow) \cite{rlangsnow}.  Snow allows for multiple computers to organize and execute parallel processing of data.  The computers communicate over regular network sockets or using MPI.  This allows for multiple computers inside the same cluster to process the same data, but is difficult to gather more than a couple computers to process the data.  Snow also has built-in \texttt{lapply} like functionality.
+Another built-in parallelization package is Simple Network of Workstations (snow) \cite{rlangsnow}.  Snow allows for multiple computers to organize and execute parallel processing of data.  The computers communicate over regular network sockets or using MPI \cite{gropp1999using}.  This allows for multiple computers inside the same cluster to process data.  Snow also has built-in \texttt{lapply} like functionality.
 
 GridR also follows this \texttt{lapply} model for parallelization.  It uses a function called \texttt{grid.apply}, which will apply a function to every element of a input vector, similar to \texttt{lapply}.  Instead of forking a process like \texttt{mcapply}, it compiles the input data and function, and submits the execution to a grid endpoint.
 
-GridR was originally written by a group for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
+GridR was originally written for use with data analysis in ACGT clineco-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
 
 \begin{itemize}
 \item R is installed on all of the worker nodes.
@@ -531,9 +531,9 @@ All of these assumptions cannot be met on modern grid resources.  Applications c
 % \item Downloads appropriate version of R from a central repository.  Caches the R installation if available (both at the file system level, and the R level).
 % \end{itemize}
 
-Bosco is designed to run on resources that are not controlled by the submitter user.  Further, it is designed to run on resources without any assumptions as to what is installed.  In order to operate under these assumptions, Bosco must bootstrap itself by brining in all the libraries and dependencies in order to operate.  Therefore, BoscoR must run under the same assumptions.
+Bosco is designed to run on resources that are not controlled by the submitting user.  Further, it is designed to run on resources without any assumptions as to what is installed.  In order to operate under these assumptions, Bosco must bootstrap itself by brining in all the libraries and dependencies in order to operate.  Therefore, BoscoR must run under the same assumptions.
 
-GridR was modified to submit to Bosco.  The input generation of GridR is shown in Figure \ref{fig:gridrinput}.  When a user or script calls \texttt{grid.apply}, GridR compiles  input function and input data into a R data file, which can be read in by another R process.  GridR handles function dependencies by using R's dependency detection and compiles any functions that may be required into the input.  
+GridR was modified to submit to Bosco.  The input generation of GridR is shown in Figure \ref{fig:gridrinput}.  When a user or script calls \texttt{grid.apply}, GridR compiles the input function and input data into a R data file, which can be read later by another R process.  GridR handles function dependencies by using R's dependency detection and compiles any functions that may be required into the input.  
 
 \begin{figure}[ht]
 \centering
@@ -542,9 +542,9 @@ GridR was modified to submit to Bosco.  The input generation of GridR is shown i
 \label{fig:gridrinput}
 \end{figure}
 
-GridR was modified to first create a submit file which will be submitted to the local system where Bosco is installed.  The submit file explicitly lists the input files and the expected output file, all of which will be transferred by Bosco.  The input files, as shown in Figure \ref{fig:gridrinput}, are the compiled function and input data and a bootstrap executable. The bootstrap is further discussed in \ref{sec:bootstrap}.
+GridR was modified to first create a submit file which will be submitted to the local system where Bosco is installed.  The submit file explicitly lists the input files and the expected output file, all of which will be transferred by Bosco.  The input files, as shown in Figure \ref{fig:gridrinput}, are the compiled function and input data and a bootstrap executable.  The output file contains the return value from the executed function.
 
-The submit and polling script is executed by GridR after forking a new R process.  This is a light weight process that submits the Bosco submission script and watches for any errors.  If the input function is executed many times by many separate jobs, the polling script will aggregate the results as they are returned to the submit node into a vector.  
+The submit and polling script is executed by GridR after forking a new R process.  This is a light weight process that submits the Bosco submission script and watches for any errors.  If the input function is executed many times by many separate jobs, the polling script will aggregate the results as they are returned to the submit node into a vector that will be returned to the user.  
 
 \subsection{Bootstrap}
 \label{sec:bootstrap}
@@ -553,19 +553,19 @@ Since Bosco cannot make an assumptions as to what is installed on the remote clu
 
 In the GridR generated submit file, the listed executable to run on the remote system is not R, but the bootstrap executable.  The bootstrap executable detects if R is installed on the remote system.  If it is installed, it simply executes the user defined function against the input data.  If R is not installed, the bootstrap downloads the appropriate version of R for the remote operating system.  The supported platforms are identical to Bosco's, CentOS 5/6 and Debian 6/7.  R is downloaded from a central server operated by the OSG's Grid Operations Center \cite{osgoperations}.  
 
-Several bootstrap jobs could start at once on a remote cluster, so a simple transactional file locking mechanism was devised so only a single bootstrap executable on a cluster will download and install for the entire cluster, if a shared file system is available.  If a shared filesystem is not available for installation, R is installed in a temporary directory that is removed upon job completion.
+The bootstrap executable installs R in a shared directory.  By utilizing a shared directory, subsequent GridR jobs may use the same R installation.  Several bootstrap jobs could start at once on a remote cluster, so a simple transactional file locking mechanism was devised so only a single bootstrap executable on a cluster will download and install for the entire cluster, if a shared file system is available.  If a shared filesystem is not available for installation, R is installed in a temporary directory that is removed upon job completion.
 
 \subsection{Running on the Open Science Grid}
 
-Submitting to the Open Science Grid (OSG) is done by direct submission.  The OSG hosts access nodes which can be used to submit to resources on the grid.  BoscoR supports these access nodes by using the direct submission method.
+Submitting to the Open Science Grid (OSG) is done by direct submission.  The OSG hosts access nodes which can be used to submit to resources on the grid.
 
-Most OSG sites do not have shared home directories for users.  Therefore, the bootstrap script must install R on ever node in a temporary directory.  In order to optimize the R installation, the bootstrap script utilizes the HTTP forward proxy infrastructure available on the OSG to minimize requests to the central hosting server.
+Most OSG sites do not have shared directories for grid users.  Therefore, the bootstrap script must install R on ever node in a temporary directory.  In order to optimize the R installation, the bootstrap script utilizes the HTTP forward proxy infrastructure \cite{garzoglio2012supporting} available on the OSG to minimize requests to the central hosting server.
 
 
 \section{Results}
 \label{sec:results}
 
-The results section is broken into two categories, results from user feedback and results 
+The results section is broken into two categories, results from user feedback and results from experimental runs on a production cluster as well as the OSG.
 
 \subsection{Results from feedback}
 
@@ -573,29 +573,27 @@ A primary goal with BoscoR was to improve the user experience of using R on dist
 
 \subsubsection{User Provided Packages}
 
-Many users require additional packages to be installed before their function can execute.  It was assumed that most of these packages would be in the major R package repositories, such as the Comprehensive R Archive Network (CRAN) \cite{cran}.  If the the package is in CRAN, the user provided function can install the package.  After receiving user feedback, it was found that not all desired packages are available in CRAN.  A modification to both the submit file and the bootstrap executable was designed.
+Many users require additional packages to be installed before their function can execute.  It was assumed that most of these packages would be in the major R package repositories, such as the Comprehensive R Archive Network (CRAN) \cite{cran}.  If the the package is in CRAN, the user provided function can install the package.  After receiving user feedback, it was found that not all desired packages are available in CRAN.  A modification to both the submit file and the bootstrap executable was designed to install the packages.
 
 In order to install a user provided package, it first needs to be transferred with to the remote cluster.  This is done by including the package in the list of input files to be transferred by Bosco for each job.  Additionally, the packages should be installed before the user function is executed on the remote resources.  This required modification to the bootstrap executable in order install the packages after installing R, but before executing the user's function on the input data.
 
 \subsubsection{Quick Jobs}
-Since the GridR interface only provides for a single function to execute against the input data, it was assumed that the function would be a time consuming data processing function that may call many other functions.  Therefore, the delay Bosco introduces would not significantly effect the performance of the executions.  After receiving feedback from users, it was determined that the more common use case is to use smaller functions that could execute in seconds or minutes.  In order to accommodate shorter jobs, a modification to the GridR generated submit script was required.
+Since the GridR interface only provides for a single function to execute against the input data, it was assumed that the function would be a time consuming data processing function that may call many other functions.  Therefore, the overhead Bosco introduces would not significantly effect the performance of the executions.  After receiving feedback from users, it was determined that the more common use case is to use smaller functions that could execute in seconds or minutes.  In order to accommodate shorter jobs, a modification to the GridR generated submit script was required.
 
-In this case, we modified the submit file so that Bosco would use the Glidein method of job submission, which is discussed in Section \ref{sec:glidein}.  Using the Glidein job submission method, the shorter jobs can be executed much more quickly, one after another, reusing the same resources.  Additionally, this saves the remote cluster scheduler from scheduling many small jobs, which can cause issues in many HPC schedulers.
+In this case, we modified the submit file so that Bosco would use the Glidein method of job submission.  Using the Glidein job submission method, the shorter jobs can be executed much more quickly, one after another, reusing the same resources.  Additionally, this saves the remote cluster scheduler from scheduling many small jobs which can cause issues in many HPC schedulers.
 
 
 \subsection{Performance Results}
 
 \subsubsection{Experimental setup}  
 
-In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying length's of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users where instead submitting short functions to be executed quickly.  
+In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying length's of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users where instead submitting short functions to be executed quickly.  We varied the length of function from 1 second to 30 minutes.  To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.
 
-To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.  Further, we test the capability of the bootstrap script quickly install R, if necessary.
-
-To execute the test jobs, we used the production cluster Tusker as the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at $>$90\% utilization, with over dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  The fair sharing scheduler is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
+To execute the test jobs, we used the production cluster Tusker at the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at $>$90\% utilization, with dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  The fair sharing scheduler is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
 
 The Tusker cluster was chosen since access was easy for the authors of this paper.  Further, it is utilized enough that the jobs would be competing against other user's jobs for available resources, and therefore not all submitted GridR functions would be able to execute simultaneously.  We believe this best represents most clusters, which are typically highly utilized by many researchers.  It is plausible that a cluster could be so utilized that no user jobs could be executed, while the other extreme could also be true, that enough resources are available for all submitted jobs to be executed immediately.  We found that Tusker utilization is somewhere between these two extremes.  It is capable of running many, but not all, jobs submitted to it immediately.  And the rest will execute as resources become available.
 
-For our testing, we submitted 1000 of different length jobs. 1000 jobs was chosen arbitrary, but from experience when helping users of GridR.  They typically submit many jobs, sometimes reaching into the thousands.  Our goal was to submit more jobs than could be run instantly by the remote cluster, but no so many that gathering repeated testing data would be impossibly time consuming.
+For our testing, we submitted 1000 GridR jobs per test run. 1000 jobs was chosen as a reasonable representation of workflows we have seen when helping users of GridR.  They typically submit many jobs, sometimes reaching into the thousands.  Our goal was to submit more jobs than could be run instantly by the remote cluster, but no so many that gathering repeated testing data would be impossibly time consuming.
 
 \subsubsection{Direct submission}
 Direct submission is defined as submission using Bosco's direct submission method.  In GridR, the library is initialized with the argument \texttt{service="bosco.direct"}.  When this setting is used, GridR generates submission scripts that use Bosco's default routing mechanism to submit to a single cluster.  The GridR functions are submitted as jobs directly to Tusker's SLURM scheduler.
@@ -608,11 +606,11 @@ Direct submission is defined as submission using Bosco's direct submission metho
 \label{fig:directsubmit}
 \end{figure}
 
-A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directsubmit}.  The submitted jobs are jobs which are submitted locally, but not yet submitted to the remote scheduler.  Remote represents the jobs which are submitted to the remote SLURM scheduler.  The submission to the remote scheduler is very rapid.  Bosco is able to submit 700 jobs, the limit in this implementation to submit at a single time, within a minute.  After the initial submission, SLURM is able to rapidly begin executing many, but not all of the submitted jobs.  Bosco maintains constant pressure, in the form of idle jobs, in case resources become available on the cluster.  You will notice the straight line in the number of submitted jobs, which dips after 30 minutes.  At 30 minutes, the first jobs begin to complete, and Bosco begins to submit more jobs to the cluster, attempting to always keep the maximum of 700 jobs either idle or running on the remote cluster.  In this workflow, all 1000 30 minute jobs finish in just over 100 hours.
+A timeline of the GridR submissions to Bosco is shown in Figure \ref{fig:directsubmit}.  The submitted jobs are jobs which are submitted locally, but not yet submitted to the remote scheduler.  Remote represents the jobs which are submitted to the remote SLURM scheduler.  The submission to the remote scheduler is very rapid.  Bosco is able to submit 700 jobs, the limit in this implementation to submit at a single time, within a minute.  SLURM is able to rapidly begin executing many, but not all of the submitted jobs.  Bosco maintains constant pressure in the form of idle jobs in case resources become available on the cluster.  You will notice the straight line in the number of submitted jobs which dips after 30 minutes.  At 30 minutes the first jobs begin to complete and Bosco begins to submit more jobs to the cluster, attempting to always keep the maximum of 700 jobs either idle or running on the remote cluster.  In this workflow, all 1000 30 minute jobs finish in just over 100 minutes.
 
-The Open Science Grid runs use the direct submission method.  But, since the OSG access nodes run Condor, the jobs are capable of starting much quicker after being submitted to the remote resource.  In this way, the OSG provides the best of both the direct and glidein approaches.  It is simple to setup like any direct submission method.  And as with glidein, the jobs start quickly on the remote resource.
+The Open Science Grid runs use the direct submission method as well.  But, since the OSG access nodes run HTCondor, the jobs are capable of starting much quicker after being submitted to the remote resource.  In this way, the OSG provides the best of both the direct and glidein approaches.  It is simple to setup like any direct submission method.  And as with the glidein submission method, the jobs start quickly on the remote resource.
 
-The OSG direct submission presents different failure modes than a traditional HPC cluster.  For example, in one of our experimental runs with 1 second jobs, a single job took over 30 minutes to complete.  The issue with this particular job was that the job was matched to a single node that was misconfigured.  In this case, the job eventually finished after being matched to a different node.  The OSG is a better option for longer jobs, where these early failures can be 
+The OSG direct submission presents different failure modes than a traditional HPC cluster.  For example, in one of our experimental runs with 1 second jobs, a single job took over 30 minutes to complete.  The issue with this particular job was that the job was matched to a single node that was misconfigured.  In this case, the job eventually finished after being matched to a different node.  The OSG may not be an ideal solution for short executions of GridR functions.
 
 \subsubsection{Glidein}
 Glidein submissions use a pilot that is submitted directly to the SLURM scheduler.  Once the pilot starts, it calls back to the submission node to request work.  This method allows multiple jobs to run within the same SLURM job, independent of the cluster's scheduler.  
@@ -628,8 +626,6 @@ Comparing the Direct submission to the glidein submission is shown in Figure \re
 
 Bosco is built on top of HTCondor.  HTCondor is a very efficient high throughput scheduler that can quickly start the execution of jobs upon available resources.  Since many R workflows are designed to run a short function upon a large amount of data, HTCondor is a good fit.  By submitting HTCondor pilots to the remote scheduler, Bosco is able to utilize it's strength of running many small jobs quickly, resulting in a shorter workflow completion time for shorter jobs.
 
-To further illustrate how Bosco is able to run short jobs quickly, Figure \ref{fig:runningjobs} shows the number of running jobs for two workflows, 30 minute jobs and 100 second jobs.
-
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=0.5\textwidth]{images/NumberRunning.pdf}
@@ -638,9 +634,9 @@ To further illustrate how Bosco is able to run short jobs quickly, Figure \ref{f
 \label{fig:runningjobs}
 \end{figure}
 
-Figure \ref{fig:runningjobs} illustrates how the glidein submission method is superior to the direct submission method for short jobs, and why both methods are roughly equivalent for longer jobs.  For longer jobs, you can see that both glidein and direct submission methods start jobs at nearly equal rates.  The variation is relatively small, and could 
+Figure \ref{fig:runningjobs} illustrates how the glidein submission method is superior to the direct submission method for short jobs, and why both methods are roughly equivalent for longer jobs.  For longer jobs, you can see that both glidein and direct submission methods start jobs at nearly equal rates.  The variation is relatively small, and could be explained by variations in the available resources at the time of running the experiments. 
 
-For the shorter 100 second jobs the start rate begins nearly the same, but then Bosco and SLURM are unable to sustain the job start rate.  Since the jobs only run for 100 seconds the overhead from Bosco submission and SLURM starting the jobs becomes a bottleneck.  Bosco is only able to sustain roughly 50 jobs directly submitted to the cluster.  On the other hand, the Glidein submission method continues to grow in the number of jobs running.  This is due to eliminating the Bosco submission overhead, as well as the SLURM scheduling overhead.  Instead, the Glidein method is utilizing the much more efficient HTCondor scheduler, which is able to start jobs much faster than the SLURM scheduler.
+For the shorter 100 second jobs the start rate begins nearly the same, but then Bosco and SLURM are unable to sustain the job start rate.  Since the jobs only run for 100 seconds the overhead from Bosco submission and SLURM starting the jobs becomes a bottleneck.  Bosco is only able to sustain roughly 50 jobs running on the cluster.  On the other hand, the Glidein submission method continues to grow in the number of jobs running.  This is due to eliminating the Bosco submission overhead, as well as the SLURM scheduling overhead.  Instead, the Glidein method is utilizing the much more efficient HTCondor scheduler, which is able to start jobs much faster than the SLURM scheduler.  We can conclude that the glidein submission method results in a shorter total workflow execution time for shorter R functions.
 
 
 
@@ -734,9 +730,9 @@ BoscoR is a framework to execute R functions on distributed resources.  It is a 
 
 As with any complicated system, many parameters can be varied in order to obtain different results.  For example:
 \begin{itemize}
-\item Resource contention may be high which could cause the cluster not start any R jobs.
+\item Resource contention may be high which could cause the cluster not start any GridR jobs.
 \item Resource contention may be low, which would cause SLURM to start all submitted jobs immediately.
-\item The number of glideins submitted in a batch could be varied in order to optimize the start rate for a particular cluster.  Any lower and it would slow job starts, increasing the workflow run time for both the short and long jobs.
+\item The number of glideins submitted in a batch could be varied in order to optimize the start rate for a particular cluster.  Any lower and it would slow job starts, increasing the workflow run time for both the short and long jobs.  Any higher, and it could overwhelm the remote scheduler.
 \end{itemize}
 
 We attempted to find reasonable values for these parameters that a end user may use.  The tests we ran showed that glidein submission method is significantly better at running short R functions than the direct submission method.  At longer job runtimes, the difference between direct and glidein submission to remote resources is negligible.
