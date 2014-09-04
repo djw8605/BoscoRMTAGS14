@@ -559,14 +559,6 @@ Several bootstrap jobs could start at once on a remote cluster, so a simple tran
 
 
 
-\begin{itemize}
-\item R installation
-\item User Scripts
-\item User Data
-\item User Dependencies
-\end{itemize}
-
-
 
 \section{Results}
 
@@ -638,6 +630,10 @@ To further illustrate how Bosco is able to run short jobs quickly, Figure \ref{f
 \caption{Number of simultaneously running jobs}
 \label{fig:runningjobs}
 \end{figure}
+
+Figure \ref{fig:runningjobs} illustrates how the glidein submission method is superior to the direct submission method for short jobs, and why both methods are roughly equivalent for longer jobs.  For longer jobs, you can see that both glidein and direct submission methods start jobs at nearly equal rates.  The variation is relatively small, and could 
+
+For the shorter 100 second jobs the start rate begins nearly the same, but then Bosco and SLURM are unable to sustain the job start rate.  Since the jobs only run for 100 seconds the overhead from Bosco submission and SLURM starting the jobs becomes a bottleneck.  Bosco is only able to sustain roughly 50 jobs directly submitted to the cluster.  On the other hand, the Glidein submission method continues to grow in the number of jobs running.  This is due to eliminating the Bosco submission overhead, as well as the SLURM scheduling overhead.  Instead, the Glidein method is utilizing the much more efficient HTCondor scheduler, which is able to start jobs much faster than the SLURM scheduler.
 
 
 
@@ -726,7 +722,19 @@ To further illustrate how Bosco is able to run short jobs quickly, Figure \ref{f
 
 
 \section{Conclusion}
-The conclusion goes here.
+
+BoscoR is a framework to execute R functions on distributed resources.  It is a simple method for users to distribute processing to remote resources.
+
+As with any complicated system, many parameters can be varied in order to obtain different results.  For example:
+\begin{itemize}
+\item Resource contention may be high which could cause the cluster not start any R jobs.
+\item Resource contention may be low, which would cause SLURM to start all submitted jobs immediately.
+\item The number of glideins submitted in a batch could be varied in order to optimize the start rate for a particular cluster.  Any lower and it would slow job starts, increasing the workflow run time for both the short and long jobs.
+\end{itemize}
+
+We attempted to find reasonable values for these parameters that a end user may use.  The tests we ran 
+
+
 
 
 
