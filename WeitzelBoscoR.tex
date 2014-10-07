@@ -460,7 +460,7 @@ Though researchers may not have experience with distributed computing, most have
 In this paper, we will describe the background of the two primary components combined to create BoscoR, Bosco  \cite{weitzel2014accessing} and GridR  \cite{wegener2007gridr}.  In section \ref{sec:implementation}, we describe how we combined these two components to create a fault tolerant framework that provides a positive user experience.  Next, in Section \ref{sec:results}, we discuss preferred submission methods based on the length of the R function, and show some results from numerous test runs against a production cluster.  Finally, we offer some conclusions and future work.
 
 \section{Background}
-BoscoR is primarily made up of two components, Bosco and GridR.  Bosco provides an interface to the remote batch system and manages faults in the job submission process.  GridR provides a user interface to create and initiate remote processing.
+BoscoR is primarily made up of two components, Bosco and GridR.  Bosco provides an simple to setup interface to the remote batch system, and provides fault tolerance for job submission and file transfers.  GridR provides a user interface to create and initiate remote processing.
 
 \subsection{Bosco}
 A number of different methods have been used to distribute jobs across multiple resources.  Inside a cluster, schedulers such as HTCondor  \cite{litzkow1988condor} and PBS \cite{henderson1995job} have been used.  Neither of these schedulers have been used to submit jobs from user's desktops, a key requirement in improving the user experience of R users.  Remote submission is heavily used in computational Grids, and uses technology such as Globus \cite{foster2001globus} and UNICORE \cite{romberg2002unicore}. This remote submission requires software installation on a server that is inside the cluster which required an administrator.
@@ -479,10 +479,12 @@ Bosco is designed to be run without administrator intervention.  It automaticall
 Bosco has two modes of job submission:
 \begin{enumerate}
 \item \textbf{Direct} -- A single job on the Bosco submit host corresponds to a single job on the remote cluster.  Each job is submitted individually to the remote cluster's scheduling system.  This method is the simplest to run, and imposes no special requirements on the submit machine.
-\item \textbf{Glidein} -- Bosco submits many pilot jobs to the remote cluster using the Direct method.  But, each of the pilots can service multiple user submitted jobs from the Bosco submit host.  This method minimizes the overhead on the remote cluster since Bosco is not submitting many jobs through the cluster scheduler.  The Glidein method requires that the Bosco submit host can be contacted from the remote cluster worker nodes. \label{sec:glidein}
+\item \textbf{Glidein} -- Bosco submits many pilot jobs to the remote cluster using the Direct method.  But, each of the pilots can service multiple user submitted jobs from the Bosco submit host.  This method minimizes the overhead on the remote cluster since Bosco is not submitting many jobs through the cluster scheduler.  The Glidein method requires that the Bosco submit host can be contacted from the remote cluster worker nodes. \label{sec:glidein}  The Glidein submission method is based off of previously written software such as the Campus Factory \cite{weitzel2011campus}.
 \end{enumerate}
 
 The two modes of job submission allow users to optimize for their environment.  If they are running many short identical jobs (which is frequent in High Throughput Computing), then the Glidein method is ideal for them.  If they are running fewer, longer, and possibly unique requirement jobs, then the direct submission method would work best.  Most users start with the direct method then graduate to glidein once they become accustomed to submitting batch jobs.
+
+Bosco's fault tolerance is in it's handling of the remote cluster.  For example, if the user's computer loses connection with the remote cluster due to network issues, or even if the user suspends their laptop, Bosco will place the jobs on hold.  Although no new jobs will be submitted to the remote cluster, jobs that were already submitted will continue to run.  Further, when Bosco re-establishes a connection to the remote cluster, Bosco will check the status of already submitted, bring back any output data from any that have completed, and continue to submit jobs to the remote scheduler.
 
 \subsection{GridR}
 % Overview of parallel libraries
@@ -511,7 +513,7 @@ Another built-in parallelization package is Simple Network of Workstations (snow
 
 GridR also follows this \texttt{lapply} model for parallelization.  It uses a function called \texttt{grid.apply}, which will apply a function to every element of an input vector, similar to \texttt{lapply}.  Instead of forking a process like \texttt{mcapply}, it compiles the input data and function, and submits the execution to a grid endpoint.
 
-GridR was originally written for use with data analysis in ACGT clinico-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions where:
+GridR was originally written for use with data analysis in ACGT clinico-genomics trials \cite{wegener2007gridr}.  It was written with the capability to submit with a limited set of grid protocols, some of which are no longer supported.  Further, GridR made assumptions of the remote resources.  These assumptions were:
 
 \begin{itemize}
 \item R is installed on all of the worker nodes.
@@ -587,7 +589,7 @@ In this case, we modified the submit file so that Bosco would use the Glidein me
 
 \subsubsection{Experimental setup}  
 
-In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying lengths of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users where instead submitting short functions to be executed quickly.  We varied the length of function from 1 second to 30 minutes.  To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.
+In order to test BoscoR, we have to simulate a R workload.  We simulate a workload with varying lengths of the executed functions.  This simulates a variety of workloads that we have seen from users.  As noted before, we assumed that the functions would be long running data processing.  But, we learned that users were instead submitting short functions to be executed quickly.  We varied the length of function from 1 second to 30 minutes.  To verify our solution to quick jobs, we tested different job lengths using both the Direct and Glidein submission method.
 
 To execute the test jobs, we used the production cluster \textit{Tusker} at the University of Nebraska -- Lincoln Holland Computing Center.  This cluster is composed of 106 nodes, each with 64 cores, for a total of 6784 cores.  The cluster has numerous users that are submitting to the central SLURM \cite{yoo2003slurm} scheduler.  The cluster traditionally runs at $>$90\% utilization, with dozens of users jobs fair sharing the resources.  The SLURM scheduler is a HPC orientated scheduler that matches submitted jobs to resources.  Fair share scheduling is used on Tusker.  Each group has equal priority with all others, therefore allowing the maximum number of users to run on the resources.
 
@@ -735,7 +737,7 @@ As with any complicated system, many parameters can be varied in order to obtain
 \item The number of glideins submitted in a batch could be varied in order to optimize the start rate for a particular cluster.  Any lower and it would slow job starts, increasing the workflow run time for both short and long jobs.  Any higher, and it could overwhelm the remote scheduler.
 \end{itemize}
 
-We chose reasonable values for these parameters that an end user may use.  In the future we will tune these parameters automatically using the feedback provided by Bosco.  Further fault tolerance testing and development is needed to provide a positive user experience when running on the OSG.
+We chose reasonable values for these parameters that an end user may use.  In the future we will tune these parameters automatically using the feedback provided by Bosco.  Although Bosco and the bootstrap process significantly improved the fault tolerance of GridR, further fault tolerance testing and development is needed to provide a positive user experience when running on national infrastructure such as the OSG.
 
 The experimental testing we ran showed that glidein submission method is significantly better at running short R functions than the direct submission method.  At longer job runtimes, the difference between direct and glidein submission to remote resources is negligible.
 
@@ -780,7 +782,8 @@ This work was completed utilizing the Holland Computing Center of the University
 % set second argument of \begin to the number of references
 % (used to reserve space for the reference number labels box)
 
-\bibliographystyle{IEEEtran}\bibliography{IEEEabrv,WeitzelBoscoR}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,WeitzelBoscoR}
 
 
 % that's all folks
