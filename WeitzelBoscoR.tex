@@ -739,6 +739,11 @@ As with any complicated system, many parameters can be varied in order to obtain
 
 We chose reasonable values for these parameters that an end user may use.  In the future we will tune these parameters automatically using the feedback provided by Bosco.  Although Bosco and the bootstrap process significantly improved the fault tolerance of GridR, further fault tolerance testing and development is needed to provide a positive user experience when running on national infrastructure such as the OSG.
 
+During follow up interviews with users after using BoscoR, we received many positive reviews of the framework.  Improving the user experience of using R on distributed resources was a primary goal of BoscoR.  One example of a positive review was from a Micro-Biology researcher from the University of Wisconsin:
+\begin{quote}
+I have a huge set of data, which I have to split into pieces to be handled by each node.  This is something I can do with the "grid.apply" function. This reduces the submit time from several hours, to several seconds... it is a  phenomenal improvement. This will greatly increase my use of grid computing, as right now, I only use grid computing when I have no other choice.
+\end{quote}
+
 The experimental testing we ran showed that glidein submission method is significantly better at running short R functions than the direct submission method.  At longer job runtimes, the difference between direct and glidein submission to remote resources is negligible.
 
 
@@ -755,8 +760,7 @@ This research was done using resources provided by the Open Science Grid, which 
 
 This work was completed utilizing the Holland Computing Center of the University of Nebraska.
 
-
-
+\newpage
 
 
 % trigger a \newpage just before the given reference
